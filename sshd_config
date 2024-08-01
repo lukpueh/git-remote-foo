@@ -1,0 +1,8 @@
+# Copied from https://github.com/rockstorm101/git-server-docker/blob/4dd3d1dd12207fb36348fda04e0209b6a9422150/examples/sshd_config
+AllowTcpForwarding no
+GatewayPorts no
+X11Forwarding no
+Subsystem	sftp	/usr/lib/ssh/sftp-server
+
+# Required for gittprotocol v2
+AcceptEnv   GIT_PROTOCOL
