@@ -23,7 +23,9 @@ var ErrInvalidPktLen = errors.New("invalid pkt-len found")
 //
 // After each Scan call, the Bytes method will return the payload of the
 // corresponding pkt-line on a shared buffer, which will be 65516 bytes
-// or smaller.  Flush pkt-lines are represented by empty byte slices.
+// or smaller.  Flush, Delimiter and Response End packets have empty byte slice
+// payloads.
+// https://git-scm.com/docs/gitprotocol-v2#_packet_line_framing
 //
 // Scanning stops at EOF or the first I/O error.
 type Scanner struct {
@@ -69,7 +71,7 @@ func (s *Scanner) Scan() bool {
 		return false
 	}
 	s.payload = s.payload[:l]
-	trace.Packet.Printf("packet: < %04x %s", l, s.payload)
+	trace.Packet.Printf("packet: < %s %s", s.len[:], s.payload)
 
 	if bytes.HasPrefix(s.payload, errPrefix) {
 		s.err = &ErrorLine{
@@ -85,7 +87,17 @@ func (s *Scanner) Scan() bool {
 // The underlying array may point to data that will be overwritten by a
 // subsequent call to Scan. It does no allocation.
 func (s *Scanner) Bytes() []byte {
+	return append(s.len[:], s.payload...)
+}
+
+func (s *Scanner) Header() []byte {
+	return s.len[:]
+}
+func (s *Scanner) Payload() []byte {
 	return s.payload
+}
+func (s *Scanner) IsFlushPkt() bool {
+	return bytes.Equal(s.len[:], FlushPkt)
 }
 
 // Method readPayloadLen returns the payload length by reading the
@@ -103,9 +115,8 @@ func (s *Scanner) readPayloadLen() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	switch {
-	case n == 0:
+	case n <= 2: // Special packets (0000, 0001, 0002)
 		return 0, nil
 	case n <= lenSize:
 		return 0, ErrInvalidPktLen

@@ -26,7 +26,10 @@ const (
 
 var (
 	// FlushPkt are the contents of a flush-pkt pkt-line.
-	FlushPkt = []byte{'0', '0', '0', '0'}
+	FlushPkt       = []byte{'0', '0', '0', '0'}
+	DelimPkt       = []byte{'0', '0', '0', '1'}
+	ResponseEndPkt = []byte{'0', '0', '0', '2'}
+
 	// Flush is the payload to use with the Encode method to encode a flush-pkt.
 	Flush = []byte{}
 	// FlushString is the payload to use with the EncodeString method to encode a flush-pkt.
